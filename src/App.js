@@ -3,6 +3,7 @@ import animeTitles from './lists';
 import 'daisyui/dist/full.css';
 
 const stageList = [128, 64, 32, 16, 8, 4, 2, 1];
+const stageLabels = ["128強", "64強", "32強", "16強", "8強", "4強", "FINAL"];
 
 function App() {
   const [remainingAnime, setRemainingAnime] = useState([...animeTitles]);
@@ -57,13 +58,13 @@ function App() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
-      <p className="text-6xl font-bold">Larry 2選1</p>
-      <p className="text-4xl font-bold">Stage {stage + 1}: {Math.ceil(successAnime.length)} / {stageList[stage]}</p>
+      <p className="text-6xl font-bold py-4">Larry 2選1</p>
+      <p className="text-4xl font-bold py-2">{stageLabels[stage]}: {Math.ceil(successAnime.length)} / {stageList[stage]}</p>
       <div className="flex space-x-4"> 
         {currentPair.map((anime, index) => (
           <button
             key={index}
-            className={`bg-${index === 0 ? 'green' : 'blue'}-700 text-white text-3xl font-bold rounded-3xl`}
+            className={`text-white text-3xl font-bold rounded-3xl ${index === 0 ? 'bg-green-700' : 'bg-blue-700'}`}
             style={{ width: '400px', height: '200px' }}
             onClick={() => handleChoice(anime)}
           >
@@ -80,29 +81,26 @@ function App() {
       </button>
 
       {showModal && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h2 className="text-4xl font-bold mb-4">Ranking</h2>
-            <ol className="list-decimal pl-5">
+        <div className="modal modal-open" role="dialog">
+          <div className="modal-box p-6">
+            <h2 className="text-6xl font-bold mb-4 text-yellow-400">Ranking</h2>
+            <ol className="list-decimal pl-5 text-left">
               {[...eliminationOrder.entries()]
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 16)
                 .map(([anime, order], index) => (
-                  <li key={index} className="text-2xl">
-                    {anime} - Eliminated at position {order}
+                  <li
+                    key={index}
+                    className={`py-2 ${index === 0 ? 'text-4xl text-orange-500 font-bold' : index === 1 ? 'text-3xl text-orange-400 font-bold' : index === 2 ? 'text-2xl text-orange-300 font-bold' : 'text-2xl'}`}
+                  >
+                    {anime}
                   </li>
                 ))}
             </ol>
             <div className="modal-action">
-              <button
-                className="bg-blue-700 text-white text-2xl font-bold rounded-3xl"
-                style={{ width: '200px', height: '50px' }}
-                onClick={resetChoices}
-              >
-                Reset Choices
-              </button>
             </div>
           </div>
+          <label className="modal-backdrop" onClick={() => setShowModal(false)}>Close</label>
         </div>
       )}
     </div>
