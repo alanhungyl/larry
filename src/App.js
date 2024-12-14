@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import animeTitles from './lists';
+import animeTitles from './newlists';
 import 'daisyui/dist/full.css';
 
 const stageList = [128, 64, 32, 16, 8, 4, 2, 1];
@@ -12,11 +12,32 @@ function App() {
   const [currentPair, setCurrentPair] = useState([]);
   const [stage, setStage] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false); // New state for reset confirmation modal
   const [eliminationOrder, setEliminationOrder] = useState(new Map());
+  const [animeImages, setAnimeImages] = useState({});
 
   useEffect(() => {
     generateRandomPair();
   }, [remainingAnime]);
+
+  useEffect(() => {
+    currentPair.forEach(anime => {
+      if (anime && !animeImages[anime]) {
+        fetchAnimeImage(anime);
+      }
+    });
+  }, [currentPair]);
+
+  const fetchAnimeImage = async (anime) => {
+    try {
+      const response = await fetch(`https://api.jikan.moe/v3/search/anime?q=${anime}&limit=1`);
+      const data = await response.json();
+      const imageUrl = data.results[0]?.image_url || '';
+      setAnimeImages(prevImages => ({ ...prevImages, [anime]: imageUrl }));
+    } catch (error) {
+      console.error('Error fetching anime image:', error);
+    }
+  };
 
   const generateRandomPair = () => {
     if (remainingAnime.length < 2) {
@@ -35,7 +56,11 @@ function App() {
     }
 
     const shuffled = [...remainingAnime].sort(() => 0.5 - Math.random());
-    setCurrentPair(shuffled.slice(0, 2));
+    const pair = shuffled.slice(0, 2);
+    if (pair.length === 1) {
+      pair.push(null); // Add a blank option if there's only one anime left
+    }
+    setCurrentPair(pair);
   };
 
   const handleChoice = (chosenAnime) => {
@@ -53,6 +78,7 @@ function App() {
     setEliminationOrder(new Map());
     setStage(0);
     setShowModal(false);
+    setShowResetModal(false); // Close the reset confirmation modal
     generateRandomPair();
   };
 
@@ -65,17 +91,17 @@ function App() {
           <button
             key={index}
             className={`text-white text-3xl font-bold rounded-3xl ${index === 0 ? 'bg-green-700' : 'bg-blue-700'}`}
-            style={{ width: '400px', height: '200px' }}
-            onClick={() => handleChoice(anime)}
+            style={{ width: '400px', height: '200px', backgroundImage: anime ? `url(${animeImages[anime]})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }}
+            onClick={() => anime && handleChoice(anime)}
           >
-            {anime}
+            {anime || 'No more options'}
           </button>
         ))}
       </div>
       <button
-        className="mt-4 bg-red-700 text-white text-2xl font-bold rounded-3xl"
+        className="mt-8 bg-red-700 text-white text-2xl font-bold rounded-3xl" // Increased margin-top to 8
         style={{ width: '200px', height: '50px' }}
-        onClick={resetChoices}
+        onClick={() => setShowResetModal(true)} // Show reset confirmation modal
       >
         Reset Choices
       </button>
@@ -101,6 +127,30 @@ function App() {
             </div>
           </div>
           <label className="modal-backdrop" onClick={() => setShowModal(false)}>Close</label>
+        </div>
+      )}
+
+      {showResetModal && (
+        <div className="modal modal-open" role="dialog">
+          <div className="modal-box p-6">
+            <h2 className="text-4xl font-bold mb-4">Confirm Reset</h2>
+            <p className="text-2xl mb-4">Are you sure you want to reset the choices?</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                className="bg-gray-500 text-white text-xl font-bold rounded-3xl px-4 py-2"
+                onClick={() => setShowResetModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-red-700 text-white text-xl font-bold rounded-3xl px-4 py-2"
+                onClick={resetChoices}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+          <label className="modal-backdrop" onClick={() => setShowResetModal(false)}>Close</label>
         </div>
       )}
     </div>
